@@ -9,14 +9,13 @@ export function ImageGalleryItem({
 }) {
   return (
     <GalleryItem onClick={onClick}>
-      <GalleryItemImage src={imageUrl} alt={`Picture ${imageAlt}`} />
+      <GalleryItemImage src={imageUrl} alt={imageAlt} />
     </GalleryItem>
   );
 }
 
 ImageGalleryItem.propTypes = {
   imageUrl: PropTypes.string.isRequired,
-  imageAlt: PropTypes.number.isRequired,
-  LargeImageUrl: PropTypes.string.isRequired,
+  imageAlt: PropTypes.string.isRequired,
   onClick: PropTypes.func.isRequired,
 };

@@ -21,13 +21,11 @@ export class Searchbar extends Component {
     const { query } = this.state;
 
     if (!query.trim()) {
-      toast.error('please, fill in at least one symbol to start search.', {
-        theme: 'colored',
-      });
+      toast.error('please, fill in at least one symbol to start search.');
+      this.setState({ query: '' });
       return;
     }
     this.props.onSubmit(query);
-    this.setState({ query: '' });
   };
 
   render() {
