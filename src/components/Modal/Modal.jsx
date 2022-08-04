@@ -21,7 +21,7 @@ export class Modal extends Component {
   };
 
   handleBackdropClick = event => {
-    if (event.currentTarget === event.target) {
+    if (event.target !== event.currentTarget) {
       this.props.onClose();
     }
   };
@@ -42,5 +42,5 @@ export class Modal extends Component {
 Modal.propTypes = {
   imageUrl: PropTypes.string.isRequired,
   imageAlt: PropTypes.string.isRequired,
-  onClose: PropTypes.func,
+  onClose: PropTypes.func.isRequired,
 };

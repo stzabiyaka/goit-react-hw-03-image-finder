@@ -1,6 +1,7 @@
 import styled from '@emotion/styled';
 
 export const LoadMoreButton = styled.button`
+  margin-bottom: 16px;
   padding: 8px 16px;
   border-radius: 2px;
   background-color: #3f51b5;
@@ -23,5 +24,9 @@ export const LoadMoreButton = styled.button`
   &:hover,
   &:focus {
     background-color: #303f9f;
+  }
+
+  &:disabled {
+    opacity: 0.5;
   }
 `;

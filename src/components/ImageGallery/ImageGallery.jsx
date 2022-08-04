@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { ImageGalleryItem } from 'components/ImageGalleryItem';
 import { ImageGalleryContainer } from '.';
 
-export function ImageGallery({ images, onClick }) {
+export function ImageGallery({ images }) {
   return (
     <ImageGalleryContainer>
       {images.length !== 0 &&
@@ -11,8 +11,9 @@ export function ImageGallery({ images, onClick }) {
             <ImageGalleryItem
               key={image.id}
               imageUrl={image.webformatURL}
-              imageAlt={`${image.tags}. Author: ${image.user}`}
-              onClick={() => onClick(image.id)}
+              largeImageUrl={image.largeImageURL}
+              tags={image.tags}
+              author={image.user}
             />
           );
         })}
@@ -28,5 +29,4 @@ ImageGallery.propTypes = {
       tags: PropTypes.string.isRequired,
     }).isRequired
   ).isRequired,
-  onClick: PropTypes.func.isRequired,
 };

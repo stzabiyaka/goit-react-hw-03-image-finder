@@ -1,14 +1,15 @@
 import { Component } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import { Application } from 'components/App';
-import { Modal } from 'components/Modal';
 import { Searchbar } from 'components/Searchbar';
 import { ImageGallery } from 'components/ImageGallery';
 import { ThreeCircles } from 'react-loader-spinner';
 import { Button } from 'components/Button';
-import fetchImagesBundle from 'services/fetch-images-bundle';
+import * as imagesApi from 'services/images-api';
 
 import 'react-toastify/dist/ReactToastify.css';
+
+const PER_PAGE = 12;
 
 export class App extends Component {
   state = {
@@ -16,115 +17,77 @@ export class App extends Component {
     images: [],
     error: null,
     page: 1,
-    totalImages: 0,
-    activeImageIndex: null,
-    showModal: false,
+    totalPages: 1,
     showLoader: false,
   };
 
   async componentDidUpdate(prevProps, prevState) {
-    const prevQuery = prevState.searchQuery;
-    const nextQuery = this.state.searchQuery;
-    const prevPage = prevState.page;
-    const nextPage = this.state.page;
+    const isSearchQueryUpdated =
+      prevState.searchQuery !== this.state.searchQuery;
+    const isPageUpdated = prevState.page !== this.state.page;
 
-    if (prevQuery !== nextQuery) {
-      this.setState({ images: [], page: 1, totalImages: 0 });
-      const result = await this.getImages({ query: nextQuery });
-
-      if (result.hits.length === 0) {
-        toast.warning(
-          'Sorry, there are no images, corresponding to your request.'
-        );
-        return;
+    if (isSearchQueryUpdated || isPageUpdated) {
+      this.setState({ showLoader: true });
+      try {
+        const result = await imagesApi.fetchImagesBundle({
+          query: this.state.searchQuery,
+          page: this.state.page,
+          perPage: PER_PAGE,
+        });
+        if (result.totalHits === 0) {
+          toast.warning(
+            'Sorry, there are no images, corresponding to your request.'
+          );
+          return;
+        }
+        if (isSearchQueryUpdated) {
+          toast.info(
+            `Hooray, we have found ${result.totalHits} images for you.`
+          );
+          this.setState({ totalPages: Math.ceil(result.totalHits / PER_PAGE) });
+        }
+        const hits = result.hits.map(element => {
+          return {
+            id: element.id,
+            webformatURL: element.webformatURL,
+            tags: element.tags,
+            user: element.user,
+            largeImageURL: element.largeImageURL,
+          };
+        });
+        this.setState(prevState => ({
+          images: [...prevState.images, ...hits],
+        }));
+      } catch (error) {
+        this.setState({ error: error.message });
+        toast.error(`Error occured ${this.state.error}`);
+      } finally {
+        this.setState({ showLoader: false });
       }
-
-      this.setState(prevState => ({
-        images: [...prevState.images, ...result.hits],
-        totalImages: result.totalHits,
-      }));
-      toast.info(
-        `Hooray, we have found ${this.state.totalImages} images for you.`
-      );
-    }
-
-    if (prevPage !== nextPage) {
-      const result = await this.getImages({ query: nextQuery });
-      this.setState(prevState => ({
-        images: [...prevState.images, ...result.hits],
-      }));
     }
   }
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({ showModal: !showModal }));
-  };
-
   setSearchQuery = query => {
-    this.setState({ searchQuery: query });
+    this.setState({ searchQuery: query, images: [], page: 1, totalPages: 1 });
   };
 
-  showNextPage = () => {
-    const { page, totalImages } = this.state;
-    const totalPages = Math.ceil(totalImages / 12);
+  loadMoreImages = () => {
+    const { page, totalPages } = this.state;
     if (page < totalPages) {
       this.setState(prevState => ({ page: prevState.page + 1 }));
     }
-  };
-
-  showActiveImage = id => {
-    const index = this.state.images.findIndex(image => image.id === id);
-    this.setState({ activeImageIndex: index });
-    this.toggleModal();
   };
 
   setShowLoader = value => {
     this.setState({ showLoader: value });
   };
 
-  getImages = async ({ query }) => {
-    this.setState({ showLoader: true });
-    try {
-      const result = await fetchImagesBundle({ query, page: this.state.page });
-      const hits = result.hits.map(element => {
-        return {
-          id: element.id,
-          webformatURL: element.webformatURL,
-          tags: element.tags,
-          user: element.user,
-          largeImageURL: element.largeImageURL,
-        };
-      });
-      const totalHits = result.totalHits;
-      return { hits, totalHits };
-    } catch (error) {
-      this.setState({ error: error.message });
-      toast.error(`Error occured ${this.state.error}`);
-    } finally {
-      this.setState({ showLoader: false });
-    }
-  };
-
   render() {
-    const { showModal, searchQuery, showLoader, images, activeImageIndex } =
-      this.state;
-    const currentImage = images[activeImageIndex];
+    const { searchQuery, showLoader, images, page, totalPages } = this.state;
     return (
       <Application>
-        {showModal && (
-          <Modal
-            imageUrl={currentImage.largeImageURL}
-            imageAlt={`${currentImage.tags}. Author: ${currentImage.user}`}
-            onClose={this.toggleModal}
-          />
-        )}
         <Searchbar onSubmit={this.setSearchQuery} />
-        {searchQuery && (
-          <ImageGallery
-            images={this.state.images}
-            onClick={this.showActiveImage}
-          />
-        )}
+        {searchQuery && <ImageGallery images={this.state.images} />}
         {showLoader && (
           <ThreeCircles
             height="100"
@@ -135,8 +98,8 @@ export class App extends Component {
             ariaLabel="three-circles-rotating"
           />
         )}
-        {images.length !== 0 && (
-          <Button onClick={this.showNextPage} disabled={showLoader} />
+        {images.length !== 0 && page !== totalPages && (
+          <Button onClick={this.loadMoreImages} disabled={showLoader} />
         )}
         <ToastContainer autoClose={3000} theme="colored" />
       </Application>
