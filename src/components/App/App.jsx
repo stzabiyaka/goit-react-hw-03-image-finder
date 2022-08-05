@@ -68,6 +68,9 @@ export class App extends Component {
   }
 
   setSearchQuery = query => {
+    if (this.state.searchQuery === query) {
+      return;
+    }
     this.setState({ searchQuery: query, images: [], page: 1, totalPages: 1 });
   };
 
